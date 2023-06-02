@@ -67,4 +67,100 @@ def get_identicon(
         # get the color based on the index
         color = color_map[color_index]
     else:
-        ...
+        color = f"#{color}"
+
+    fields = list()
+    for i in range(66):
+        fields.append(field_data[:3])  # get first 3 bits
+        field_data = field_data[3:]  # then remove them
+
+    field_fill = list()
+    for field in fields:
+        # conver bits to list (010 -> [0, 1, 0])
+        bit_list = list(field)
+
+        # sum all bits
+        # bit_sum = int(bit_list[0]) + int(bit_list[1]) +  int(bit_list[2])
+        bit_sum = sum(map(int, bit_list))
+        if bit_sum <= 1:
+            field_fill.append(False)
+        elif bit_sum >= 2:
+            field_fill.append(True)
+
+    # x, y, x-limit (see comments above) (max: 11, 11, 6)
+    usable_grid_size = [5, 5, 3]
+
+    # credits to chatGPT lol, didn't know this existed
+    dwg = svgwrite.Drawing("identicon.svg", profile="tiny")
+
+    if background:
+        if background == "light":
+            background = "#ffffff"
+        elif background == "dark":
+            background = "#212121"
+        else:
+            background = f"#{background}"
+
+        try:
+            dwg.add(dwg.rect((0, 0), (size, size), fill=background))  # fill background
+        except TypeError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid background color - only pass on HEX colors without the '#' prefix or 'light'/'dark'",
+            )
+    # Size of each identicon cell
+    cell_size = size / usable_grid_size[0]
+
+    # iterate through y
+    for i in range(usable_grid_size[1]):
+        row_list = list()
+
+        # iterate through x
+        for j in range(usable_grid_size[2]):
+            # i (row) * x (size, e.g. 11) + j (column index) -> list index
+            if field_fill[i * usable_grid_size[2] + j] == True:
+                # calculate cell position
+                x = j * cell_size
+                y = i * cell_size
+
+                # Draw cell rectangle with the assigned color
+                try:
+                    dwg.add(dwg.rect((x, y), (cell_size, cell_size), fill=color))
+                except TypeError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Invalid fill color - only pass on HEX colors without the '#' prefix",
+                    )
+            else:
+                pass
+            # make a separate list for reversing
+            row_list.append(field_fill[i * usable_grid_size[2] + j])
+
+        # reverse the list & remove the first element (the middle one / x-limit)
+        row_list_reversed = list(reversed(row_list))[1:]
+
+        # make a separate index for the reversed list since k is not an index like j
+        row_list_index = 0
+
+        for k in row_list_reversed:
+            if k == True:
+                # Calculate cell position
+                x = (row_list_index + usable_grid_size[2]) * cell_size
+                y = i * cell_size
+
+                # Draw cell rectangle with the assigned color
+                try:
+                    dwg.add(dwg.rect((x, y), (cell_size, cell_size), fill=color))
+                except TypeError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Invalid fill color - only pass on HEX colors without the '#' prefix",
+                    )
+            else:
+                pass
+            row_list_index += 1
+
+    # Get the SVG as a string
+    svg_string = dwg.tostring()
+    # Set the response type to SVG
+    return Response(content=svg_string, media_type="image/svg+xml")
