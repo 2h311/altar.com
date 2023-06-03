@@ -94,7 +94,7 @@ def get_identicon(
     # credits to chatGPT lol, didn't know this existed
     dwg = svgwrite.Drawing("identicon.svg", profile="tiny")
 
-    if background:
+    if background != None:
         if background == "light":
             background = "#ffffff"
         elif background == "dark":

@@ -9,8 +9,7 @@ const performance = document.getElementById("try-it-performance");
 inputField.addEventListener("input", function () {
   const startTime = new Date().getTime();
   const inputValue = inputField.value;
-
-  outputImage.src = `https://${window.location.hostname}/generate?data=${inputValue}&size=50`;
+  outputImage.src = `${window.location.origin}/generate?data=${inputValue}&size=50`;
 
   outputImage.onload = function () {
     const endTime = new Date().getTime();
