@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Union
 
 from fastapi.staticfiles import StaticFiles
@@ -10,7 +11,7 @@ import svgwrite
 
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url="/openapi")
-app.mount("/assets", StaticFiles(directory="templates" "asset"), name="assets")
+app.mount("/assets", StaticFiles(directory=Path("templates") / "assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 
 
